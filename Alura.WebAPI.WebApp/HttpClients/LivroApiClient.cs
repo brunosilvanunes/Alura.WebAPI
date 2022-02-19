@@ -87,7 +87,7 @@ namespace Alura.ListaLeitura.HttpClients
                 content.Add(new StringContent(model.Autor), EnvolveComAspasDuplas("autor"));
             }
 
-            if (String.IsNullOrEmpty(model.Resumo))
+            if (!String.IsNullOrEmpty(model.Resumo))
             {
                 content.Add(new StringContent(model.Resumo), EnvolveComAspasDuplas("resumo"));
             }
