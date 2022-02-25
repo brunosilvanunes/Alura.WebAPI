@@ -4,12 +4,14 @@ using Alura.ListaLeitura.Persistencia;
 using Alura.WebAPI.Api.Modelos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace Alura.ListaLeitura.Api.Controllers
 {
     [ApiController]
     [Authorize]
     [ApiVersion("2.0")]
+    [ApiExplorerSettings(GroupName = "v2")]
     [Route("api/v{version:apiVersion}/livros")]
     public class Livros2Controller : ControllerBase
     {
@@ -35,6 +37,14 @@ namespace Alura.ListaLeitura.Api.Controllers
         }
 
         [HttpGet("{id}")]
+        [SwaggerOperation(
+            Summary = "Recupera o livro identificado por seu {id}.",
+            Tags = new[] { "Livros" },
+            Produces = new[] { "application/json", "application/xml" }
+        )]
+        [ProducesResponseType(statusCode: 200, Type = typeof(LivroApi))]
+        [ProducesResponseType(statusCode: 500, Type = typeof(ErrorResponse))]
+        [ProducesResponseType(404)]
         public IActionResult Recuperar(int id)
         {
             var model = _repo.Find(id);
@@ -60,6 +70,10 @@ namespace Alura.ListaLeitura.Api.Controllers
         }
 
         [HttpPost]
+        [SwaggerOperation(
+            Summary = "Registra no livro na base.",
+            Produces = new [] {"application/json", "application/xml"}
+        )]
         public IActionResult Incluir([FromForm] LivroUpload model)
         {
             if (ModelState.IsValid)
@@ -69,7 +83,7 @@ namespace Alura.ListaLeitura.Api.Controllers
                 var uri = Url.Action("Recuperar", new { id = livro.Id });
                 return Created(uri, livro); //201
             }
-            return BadRequest();
+            return BadRequest(ErrorResponse.FromModelState(ModelState));
         }
 
         [HttpPut]

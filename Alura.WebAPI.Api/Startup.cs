@@ -1,13 +1,17 @@
 ﻿using System;
+using System.Collections.Generic;
 using Alura.ListaLeitura.Api.Formatters;
 using Alura.ListaLeitura.Modelos;
 using Alura.ListaLeitura.Persistencia;
+using Alura.WebAPI.Api.Filtros;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using Swashbuckle.AspNetCore.Swagger;
 
 namespace Alura.WebAPI.Api
 {
@@ -30,7 +34,13 @@ namespace Alura.WebAPI.Api
 
             services.AddMvc(options => {
                 options.OutputFormatters.Add(new LivroCsvFormatter());
+                options.Filters.Add(typeof(ErrorResponseFilter));
             }).AddXmlSerializerFormatters();
+
+            services.Configure<ApiBehaviorOptions>(options =>
+            {
+                options.SuppressModelStateInvalidFilter = true;
+            });
 
             services.AddAuthentication(options =>
             {
@@ -51,6 +61,37 @@ namespace Alura.WebAPI.Api
             });
 
             services.AddApiVersioning();
+
+            services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new Info {
+                    Title = "Livros API",
+                    Description = "Documentação da API de livros.", 
+                    Version = "1.0"
+                });
+                c.SwaggerDoc("v2", new Info
+                {
+                    Title = "Livros API",
+                    Description = "Documentação da API de livros.",
+                    Version = "2.0"
+                });
+                c.EnableAnnotations();
+                c.AddSecurityDefinition("Bearer", new ApiKeyScheme
+                {
+                    Name = "Authorization",
+                    In = "header",
+                    Type = "apiKey",
+                    Description = "Autenticação Bearer via JWT"
+                });
+                c.AddSecurityRequirement(
+                    new Dictionary<string, IEnumerable<string>> {
+                        { "Bearer", new string[] {} }
+                });
+                c.DescribeAllEnumsAsStrings();
+                c.DescribeStringEnumsInCamelCase();
+                c.OperationFilter<AuthResponsesOperationFilter>();
+                c.DocumentFilter<TagDescriptionsDocumentFilter>();
+            });
         }
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
@@ -63,6 +104,13 @@ namespace Alura.WebAPI.Api
             app.UseAuthentication();
 
             app.UseMvc();
+
+            app.UseSwagger();
+
+            app.UseSwaggerUI(c => {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Versão 1.0");
+                c.SwaggerEndpoint("/swagger/v2/swagger.json", "Versão 2.0");
+            });
         }
     }
 }
